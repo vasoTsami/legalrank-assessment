@@ -1,0 +1,31 @@
+version: 2
+
+sources:
+  - name: main
+    description: Raw tables loaded by Fivetran.
+
+    tables:
+      - name: raw_rankings
+        description: Raw rankings source.
+        loaded_at_field: modified_ts
+        freshness:
+          warn_after:
+            count: 5
+            period: hour
+          error_after:
+            count: 6
+            period: hour
+
+      - name: raw_submissions
+        description: Raw submissions source.
+        loaded_at_field: created_ts
+        freshness:
+          warn_after:
+            count: 5
+            period: hour
+          error_after:
+            count: 6
+            period: hour
+
+      - name: raw_firms
+        description: Raw firms source.

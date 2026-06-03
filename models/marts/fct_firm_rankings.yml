@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: fct_firm_rankings
+    description: Final mart for Top Tier Firms reporting and analytics.
+
+    tests:
+
+      # Current dataset contains ~945 rows.
+      # A drop below 900 likely indicates an upstream ingestion,
+      # deduplication or transformation issue.
+
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          arguments:
+            min_value: 900
+            max_value: 2000
+
+    columns:
+
+      - name: ranking_id
+        description: Unique ranking record identifier.
+        tests:
+          - unique
+          - not_null
+
+      - name: ranking_decision_status
+        description: Derived business status indicating whether a firm is ranked.
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - ranked
+                  - not ranked
+
+      - name: is_top_tier
+        description: True when ranking_tier = 1.
+        tests:
+          - not_null
+
+      - name: is_top_two_tiers
+        description: True when ranking_tier in (1,2).
+        tests:
+          - not_null
+
+      - name: is_published_active
+        description: True when publication_status = 'active'
+                     and post_status = 'publish'.
+        tests:
+          - not_null
+
+      - name: is_ranked
+        description: Convenience flag derived from ranking_decision_status.
+        tests:
+          - not_null
+
+# Volume anomaly monitoring would normally be enabled in production:
+#
+# tests:
+#   - elementary.volume_anomalies:
+#       timestamp_column: modified_ts
+#       training_period:
+#         period: day
+#         count: 30
+#       detection_period:
+#         period: day
+#         count: 1
+#       anomaly_sensitivity: 1

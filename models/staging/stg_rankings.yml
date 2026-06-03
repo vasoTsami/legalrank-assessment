@@ -1,0 +1,131 @@
+version: 2
+
+models:
+  - name: stg_rankings
+    description: "Cleaned staging model for rankings."
+
+    # Elementary anomaly monitoring
+    # tests:
+     #  - elementary.volume_anomalies:
+       #    timestamp_column: modified_ts
+          # Business rationale:
+          # Significant volume changes may indicate a broken CMS export or Fivetran sync
+       #    config:
+        #     severity: warn
+
+    columns:
+
+      - name: ranking_id
+        description: "Unique ranking identifier after deduplication."
+        tests:
+          - not_null
+          - unique
+
+      - name: edition_year
+        description: "Ranking edition year."
+        tests:
+          - not_null
+
+      - name: edition_id
+        description: "Ranking edition identifier."
+
+      - name: firm_ref
+        description: "Reference to the ranked firm. Invalid firm references are excluded. Invalid = firm_ref not found in raw_firms."
+        tests:
+          - not_null:
+              config:
+                severity: error
+                # Business rationale:
+                # Rankings without a firm cannot be shown in products or reporting.
+
+          - relationships:
+              arguments:
+                to: ref('raw_firms')
+                field: firm_ref
+              config:
+                severity: error
+                # Business rationale:
+                # Every ranking must reference a valid firm.
+
+      - name: practice_area_id
+        description: "Reference to the legal practice area."
+        tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('raw_practice_areas')
+                field: practice_area_id
+              config:
+                severity: error
+                # Business rationale:
+                # Rankings must map to a valid practice area.
+
+      - name: ranking_tier
+        description: "Unified integer ranking tier derived from ranking_tier or tier_rank."
+        tests:
+          - not_null:
+              config:
+                severity: error
+                # Business rationale:
+                # Tier drives client-facing ranking displays.
+
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3, 4, 5]
+
+          # dbt_expectations test
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 5
+
+      - name: post_status
+        description: "Standardised CMS post status."
+        tests:
+          - not_null
+
+          - accepted_values:
+              arguments:
+                values:
+                  - publish
+                  - draft
+                  - pending
+                  - trash
+              config:
+                severity: warn
+                # Business rationale:
+                # New statuses may indicate a CMS deployment change but do not necessarily break processing.
+
+      - name: publication_status
+        description: "Publication lifecycle status from the CMS export."
+
+      - name: listing_type
+        description: "Nullable listing type introduced in the post-migration CMS export."
+
+      - name: commentary
+        description: "Editorial commentary text for the ranking."
+
+      - name: modified_ts
+        description: "Timestamp used to keep the latest version of each ranking."
+        tests:
+          - not_null
+
+          # dbt_expectations test
+          - dbt_expectations.expect_column_values_to_not_be_null
+      
+    # Elementary monitoring
+    # tests:
+    #   - elementary.volume_anomalies:
+    #       timestamp_column: modified_ts
+    #       training_period:
+    #         period: day
+    #         count: 30
+    #       detection_period:
+    #         period: day
+    #         count: 1
+    #       anomaly_sensitivity: 2
+
+    #   - elementary.schema_changes:
+    #       config:
+    #         severity: error

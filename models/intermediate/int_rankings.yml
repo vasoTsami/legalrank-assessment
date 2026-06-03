@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: int_rankings
+    description: "Business-ready rankings enriched with firm and practice area information."
+
+    columns:
+
+      - name: ranking_id
+        description: "Unique ranking identifier."
+        tests:
+          - not_null
+          - unique
+
+      - name: firm_name
+        description: "Resolved firm name."
+        tests:
+          - not_null
+
+      - name: practice_area
+        description: "Resolved practice area."
+        tests:
+          - not_null
+
+      - name: ranking_decision_status
+        description: "Business classification of ranking outcome."
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - ranked
+                  - not ranked
+
+      - name: ranking_tier
+        description: "Unified ranking tier used for ranking classification."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 5

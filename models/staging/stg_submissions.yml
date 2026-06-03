@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: stg_submissions
+    description: Cleaned and deduplicated submissions dataset.
+
+    columns:
+
+      - name: submission_id
+        description: Unique submission identifier.
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+          - unique:
+              config:
+                severity: error
+
+      - name: firm_ref
+        description: Reference to the submitting firm.
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+          - relationships:
+              arguments:
+                to: source('main', 'raw_firms')
+                field: firm_ref
+              config:
+                severity: error
+
+      - name: practice_area_id
+        description: Practice area identifier.
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: submitted_at
+        description: Timestamp when the submission was created.
+        tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: status
+        description: Submission workflow status.
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - submitted
+                  - approved
+                  - in_review
+                  - rejected
+              config:
+                severity: error
+
+      - name: num_referees
+        description: Number of referees provided with the submission.
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 20
+                config:
+                    severity: warn
+
+      - name: submitted_by_email
+        description: Email address of the submitter.
+        tests:
+          - dbt_expectations.expect_column_values_to_match_regex:
+              regex: '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+              config:
+                severity: warn
