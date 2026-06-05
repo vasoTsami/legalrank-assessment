@@ -43,11 +43,11 @@ select
     r.publication_status,
 
     case
-        when lower(r.commentary) like '%firm recommended%'
+        when lower(r.ranking_type) like '%firm recommended%'
              and r.ranking_tier = 0
         then 'not ranked'
 
-        when lower(r.commentary) like '%firm to watch%'
+        when lower(r.ranking_type) like '%firm to watch%'
              and r.ranking_tier = 0
              and r.post_status <> 'publish'
         then 'not ranked'
