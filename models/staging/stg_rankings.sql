@@ -2,7 +2,7 @@ with rankings as (
     select
         *,
         row_number() over (
-            partition by ranking_id, edition_year
+            partition by ranking_id
             order by
                 try_cast(modified_ts as timestamp) desc,
                 firm_ref desc,
@@ -25,7 +25,7 @@ coalesce(
         then cast(replace(tier_rank, 'TIER_', '') as integer)
     end
 ) as ranking_tier,
-
+    ranking_type,
     lower(trim(post_status)) as post_status,
     publication_status,
     listing_type,
